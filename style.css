@@ -1,91 +1,165 @@
 body {
   font-family: Arial, sans-serif;
-  background: linear-gradient(to bottom, #bcd6fb, #cbdffa);
+  background: linear-gradient(to bottom, #a1c4fd, #c2e9fb);
   margin: 0;
   padding: 20px;
   display: flex;
   justify-content: center;
 }
 
-.calendar-container {
-  background-color: white;
-  padding: 30px;
+#calendar {
+  background: white;
+  padding: 20px 30px;
   border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  max-width: 600px;
-  width: 100%;
+  width: 600px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 h1 {
   text-align: center;
-}
-
-#auth-section {
-  text-align: center;
   margin-bottom: 20px;
 }
 
-input[type="email"],
-input[type="password"],
-input[type="text"],
-input[type="time"] {
-  padding: 8px;
-  margin: 5px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+#adminPassword {
+  padding: 8px 12px;
+  border-radius: 15px;
+  border: 1px solid #ddd;
+  width: 180px;
+  margin-right: 10px;
+  outline: none;
+  transition: box-shadow 0.3s ease;
+}
+#adminPassword:focus {
+  box-shadow: 0 0 5px #4CAF50;
 }
 
 button {
-  padding: 8px 15px;
-  border-radius: 8px;
-  border: none;
-  background-color: #4bd685;
-  color: white;
   cursor: pointer;
-  margin: 5px;
-  font-weight: bold;
+  background: #4CAF50;
+  border: none;
+  color: white;
+  padding: 9px 16px;
+  border-radius: 15px;
+  font-weight: 600;
+  transition: background 0.3s ease;
 }
-
 button:hover {
-  background-color: #3fc178;
+  background: #3e8e41;
 }
 
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+#monthYearControls {
+  text-align: center;
+  margin: 20px 0;
 }
 
-.calendar {
+#monthYearLabel {
+  font-weight: 700;
+  font-size: 1.3em;
+  margin: 0 15px;
+  user-select: none;
+}
+
+#daysOfWeek, #calendarDays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-top: 15px;
-}
-
-.calendar div {
+  gap: 10px;
   text-align: center;
-  padding: 10px;
-  background-color: #dceee4;
-  border-radius: 8px;
+  font-weight: 600;
+  user-select: none;
+}
+
+#calendarDays {
+  margin-bottom: 20px;
+}
+
+.day {
+  background: #d7e6dd;
+  padding: 12px 0;
+  border-radius: 12px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.3s ease;
+  user-select: none;
 }
 
-.calendar .has-course {
-  background-color: #4bb543;
+.day:hover {
+  background: #a9c8b5;
+}
+
+.day.selected {
+  background: #48a14d;
   color: white;
 }
 
-.calendar .selected {
-  background-color: #3a9f3a;
+.day.has-course {
+  background: #7ca76e;
   color: white;
-  font-weight: bold;
 }
 
-.course-section,
-.admin-section {
-  margin-top: 20px;
+.day.has-course.selected {
+  background: #3d6b32;
+}
+
+#coursesInfo {
+  background: #f2f9f0;
   padding: 15px;
-  background-color: #f6fbf7;
   border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+#adminPanel {
+  background: #f2f9f0;
+  padding: 15px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+#adminPanel ul {
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+
+#adminPanel li {
+  margin-bottom: 8px;
+}
+
+#adminPanel label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+#adminPanel input[type="time"],
+#adminPanel input[type="text"] {
+  width: calc(100% - 20px);
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 5px;
+}
+
+#adminPanel button {
+  margin-top: 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#adminPanel button:hover {
+  background-color: #3e8e41;
+}
+
+#adminPanel button[id^="delCourseBtn"] {
+  margin-left: 10px;
+  background-color: #d9534f;
+}
+
+#adminPanel button[id^="delCourseBtn"]:hover {
+  background-color: #c9302c;
 }
