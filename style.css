@@ -20,16 +20,24 @@ h1 {
   margin-bottom: 20px;
 }
 
-#adminPassword {
+#authContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+#adminEmail, #adminPassword {
   padding: 8px 12px;
   border-radius: 15px;
   border: 1px solid #ddd;
   width: 180px;
-  margin-right: 10px;
   outline: none;
   transition: box-shadow 0.3s ease;
 }
-#adminPassword:focus {
+#adminEmail:focus, #adminPassword:focus {
   box-shadow: 0 0 5px #4CAF50;
 }
 
@@ -162,4 +170,10 @@ button:hover {
 
 #adminPanel button[id^="delCourseBtn"]:hover {
   background-color: #c9302c;
+}
+
+/* message d'auth */
+#authMessage {
+  width: 100%;
+  text-align: center;
 }

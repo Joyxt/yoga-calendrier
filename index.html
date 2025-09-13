@@ -9,9 +9,15 @@
 <body>
   <div id="calendar">
     <h1>Yoga Hamsa Marseille</h1>
-    <input type="password" id="adminPassword" placeholder="Mot de passe admin" />
-    <button id="loginBtn">Connexion</button>
-    <button id="logoutBtn" style="display:none; margin-left:10px;">Déconnexion</button>
+
+    <!-- Auth UI -->
+    <div id="authContainer">
+      <input type="email" id="adminEmail" placeholder="Email admin" />
+      <input type="password" id="adminPassword" placeholder="Mot de passe" />
+      <button id="loginBtn">Connexion</button>
+      <button id="logoutBtn" style="display:none; margin-left:10px;">Déconnexion</button>
+      <div id="authMessage" style="margin-top:8px; font-weight:600;"></div>
+    </div>
 
     <div id="monthYearControls">
       <button id="prevMonthBtn">←</button>
@@ -36,8 +42,9 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase (compat libs) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
   <script src="script.js"></script>

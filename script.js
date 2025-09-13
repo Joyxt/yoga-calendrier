@@ -10,6 +10,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
 // Variables globales
 const monthNames = [
@@ -32,13 +33,16 @@ const nextMonthBtn = document.getElementById("nextMonthBtn");
 
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const adminEmailInput = document.getElementById("adminEmail");
 const adminPasswordInput = document.getElementById("adminPassword");
 const adminPanel = document.getElementById("adminPanel");
 const adminContent = document.getElementById("adminContent");
+const authMessage = document.getElementById("authMessage");
 
 let selectedDayElement = null;
 let selectedDate = null;
 let adminConnected = false;
+let currentUser = null; // firebase user object
 
 // Fonction pour charger les données Firestore dans coursesData
 async function loadCoursesFromFirestore() {
@@ -54,8 +58,24 @@ async function loadCoursesFromFirestore() {
   }
 }
 
-// Fonction pour sauvegarder un jour dans Firestore
+// Fonction pour vérifier si une UID est admin (collection 'admins', doc id = uid)
+async function checkIfAdmin(uid) {
+  if (!uid) return false;
+  try {
+    const doc = await db.collection("admins").doc(uid).get();
+    return doc.exists;
+  } catch (err) {
+    console.error("Erreur check admin:", err);
+    return false;
+  }
+}
+
+// Fonction pour sauvegarder un jour dans Firestore (vérifie admin côté client)
 function saveDayToFirestore(dateStr) {
+  if (!adminConnected || !currentUser) {
+    return Promise.reject(new Error("Accès refusé : non connecté en tant qu'admin."));
+  }
+
   if(coursesData[dateStr] && coursesData[dateStr].length > 0) {
     return db.collection("cours").doc(dateStr).set({ cours: coursesData[dateStr] })
       .then(() => console.log(`Sauvegarde Firestore réussie pour ${dateStr}`))
@@ -133,6 +153,13 @@ function afficherCours(dateStr) {
 
 // Affiche le panneau admin pour gérer les cours
 function renderAdminPanel(dateStr) {
+  if(!adminConnected || !currentUser) {
+    adminPanel.style.display = "none";
+    return;
+  }
+
+  adminPanel.style.display = "block";
+
   if(!dateStr) {
     adminContent.innerHTML = "<p>Sélectionne un jour pour gérer ses cours.</p>";
     return;
@@ -143,7 +170,7 @@ function renderAdminPanel(dateStr) {
   let html = `
     <p><strong>Gestion des cours pour le ${dateStr}</strong></p>
     <ul>
-      ${coursDuJour.map((c, i) => `<li>${c.heure} - ${c.titre} <button data-index="${i}" id="delCourseBtn${i}">X</button></li>`).join('')}
+      ${coursDuJour.map((c, i) => `<li>${c.heure} - ${c.titre} <button data-index="${i}" id="delCourseBtn${i}">X</button></li>`).join('') || '<li>(Aucun)</li>'}
     </ul>
 
     <label for="newCourseTime">Heure :</label>
@@ -160,22 +187,33 @@ function renderAdminPanel(dateStr) {
   // Supprimer un cours
   coursDuJour.forEach((c, i) => {
     const delBtn = document.getElementById(`delCourseBtn${i}`);
-    delBtn.addEventListener("click", () => {
-      coursDuJour.splice(i, 1);
-      if(coursDuJour.length === 0) {
-        delete coursesData[dateStr];
-      }
-      saveDayToFirestore(dateStr).then(() => {
-        renderCalendar(currentMonth, currentYear);
-        afficherCours(dateStr);
-        renderAdminPanel(dateStr);
+    if (delBtn) {
+      delBtn.addEventListener("click", async () => {
+        // Re-vérification côté client
+        if(!adminConnected) { alert("Accès refusé."); return; }
+        coursDuJour.splice(i, 1);
+        if(coursDuJour.length === 0) {
+          delete coursesData[dateStr];
+        } else {
+          coursesData[dateStr] = coursDuJour;
+        }
+        try {
+          await saveDayToFirestore(dateStr);
+          renderCalendar(currentMonth, currentYear);
+          afficherCours(dateStr);
+          renderAdminPanel(dateStr);
+        } catch (err) {
+          alert("Erreur lors de la suppression : " + err.message);
+        }
       });
-    });
+    }
   });
 
   // Ajouter un cours
   const addBtn = document.getElementById("addCourseBtn");
-  addBtn.addEventListener("click", () => {
+  addBtn.addEventListener("click", async () => {
+    if(!adminConnected) { alert("Accès refusé."); return; }
+
     const timeInput = document.getElementById("newCourseTime");
     const titleInput = document.getElementById("newCourseTitle");
 
@@ -191,17 +229,19 @@ function renderAdminPanel(dateStr) {
       coursesData[dateStr] = [];
     }
     coursesData[dateStr].push({ heure, titre });
-
     coursesData[dateStr].sort((a,b) => a.heure.localeCompare(b.heure));
 
     timeInput.value = "";
     titleInput.value = "";
 
-    saveDayToFirestore(dateStr).then(() => {
+    try {
+      await saveDayToFirestore(dateStr);
       renderCalendar(currentMonth, currentYear);
       afficherCours(dateStr);
       renderAdminPanel(dateStr);
-    });
+    } catch (err) {
+      alert("Erreur lors de l'ajout : " + err.message);
+    }
   });
 }
 
@@ -232,38 +272,86 @@ nextMonthBtn.addEventListener("click", () => {
   selectedDate = null;
 });
 
-// Connexion admin
-loginBtn.addEventListener("click", () => {
+// Connexion admin (email/password)
+loginBtn.addEventListener("click", async () => {
+  const email = adminEmailInput.value.trim();
   const password = adminPasswordInput.value;
-  if(password === "admin123") {
-    adminConnected = true;
-    adminPanel.style.display = "block";
-    logoutBtn.style.display = "inline-block";
-    loginBtn.style.display = "none";
-    adminPasswordInput.style.display = "none";
-    adminContent.innerHTML = "<p>Sélectionne un jour pour gérer ses cours.</p>";
-    if(selectedDate) {
-      renderAdminPanel(selectedDate);
+  authMessage.textContent = "";
+  if(!email || !password) {
+    authMessage.style.color = "red";
+    authMessage.textContent = "Renseigne email et mot de passe.";
+    return;
+  }
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    // onAuthStateChanged gérera le reste (check admin)
+  } catch (err) {
+    console.error("Erreur connexion :", err);
+    authMessage.style.color = "red";
+    switch(err.code) {
+      case "auth/wrong-password":
+        authMessage.textContent = "Mot de passe incorrect.";
+        break;
+      case "auth/user-not-found":
+        authMessage.textContent = "Aucun utilisateur avec cet email.";
+        break;
+      case "auth/invalid-email":
+        authMessage.textContent = "Email invalide.";
+        break;
+      default:
+        authMessage.textContent = err.message;
     }
-  } else {
-    alert("Mot de passe incorrect.");
   }
 });
 
 // Déconnexion admin
 logoutBtn.addEventListener("click", () => {
-  adminConnected = false;
-  adminPanel.style.display = "none";
-  adminContent.innerHTML = "";
-  loginBtn.style.display = "inline-block";
-  adminPasswordInput.style.display = "inline-block";
-  logoutBtn.style.display = "none";
-  adminPasswordInput.value = "";
-  if(selectedDayElement) selectedDayElement.classList.remove("selected");
-  selectedDayElement = null;
-  selectedDate = null;
-  coursesInfo.innerHTML = "<strong>Horaires des cours</strong><br>Sélectionne un jour pour voir les cours.";
-  renderCalendar(currentMonth, currentYear);
+  auth.signOut();
+});
+
+// Ecouteur d'état d'auth (gère connexion/déconnexion)
+auth.onAuthStateChanged(async (user) => {
+  currentUser = user;
+  if (user) {
+    // Vérifier si uid est admin (collection 'admins')
+    const isAdmin = await checkIfAdmin(user.uid);
+    if (isAdmin) {
+      adminConnected = true;
+      adminPanel.style.display = "block";
+      logoutBtn.style.display = "inline-block";
+      loginBtn.style.display = "none";
+      adminEmailInput.style.display = "none";
+      adminPasswordInput.style.display = "none";
+      authMessage.style.color = "green";
+      authMessage.textContent = "Connecté en tant qu'admin: " + (user.email || user.uid);
+      if(selectedDate) renderAdminPanel(selectedDate);
+    } else {
+      // utilisateur connecté mais pas admin
+      adminConnected = false;
+      adminPanel.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+      loginBtn.style.display = "none";
+      adminEmailInput.style.display = "none";
+      adminPasswordInput.style.display = "none";
+      authMessage.style.color = "red";
+      authMessage.textContent = "Connecté mais pas autorisé comme admin.";
+    }
+  } else {
+    // pas connecté
+    adminConnected = false;
+    currentUser = null;
+    adminPanel.style.display = "none";
+    adminContent.innerHTML = "";
+    loginBtn.style.display = "inline-block";
+    adminEmailInput.style.display = "inline-block";
+    adminPasswordInput.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    adminEmailInput.value = "";
+    adminPasswordInput.value = "";
+    authMessage.textContent = "";
+    renderCalendar(currentMonth, currentYear);
+  }
 });
 
 // Initialisation : charger depuis Firestore puis afficher calendrier
