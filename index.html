@@ -2,44 +2,39 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Yoga Hamsa Marseille</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="calendar">
+  <div class="calendar-container">
     <h1>Yoga Hamsa Marseille</h1>
-    <input type="password" id="adminPassword" placeholder="Mot de passe admin" />
-    <button id="loginBtn">Connexion</button>
-    <button id="logoutBtn" style="display:none; margin-left:10px;">Déconnexion</button>
+    <div id="auth-section">
+      <input type="email" id="email" placeholder="Email admin" />
+      <input type="password" id="password" placeholder="Mot de passe" />
+      <button id="loginBtn">Connexion</button>
+      <button id="logoutBtn" style="display: none;">Déconnexion</button>
+    </div>
+    <div class="calendar-header">
+      <button id="prevMonth">←</button>
+      <h2 id="monthYear"></h2>
+      <button id="nextMonth">→</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
 
-    <div id="monthYearControls">
-      <button id="prevMonthBtn">←</button>
-      <span id="monthYearLabel"></span>
-      <button id="nextMonthBtn">→</button>
+    <div class="course-section">
+      <h3>Horaires des cours</h3>
+      <div id="courseInfo">Sélectionne un jour pour voir les cours.</div>
     </div>
 
-    <div id="daysOfWeek">
-      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
-    </div>
-
-    <div id="calendarDays"></div>
-
-    <div id="coursesInfo">
-      <strong>Horaires des cours</strong><br />
-      Sélectionne un jour pour voir les cours.
-    </div>
-
-    <div id="adminPanel" style="display:none;">
-      <h2>Gestion des cours</h2>
-      <div id="adminContent"></div>
+    <div class="admin-section" id="adminSection" style="display:none;">
+      <h3>Gestion des cours</h3>
+      <input type="time" id="courseTime" />
+      <input type="text" id="courseTitle" placeholder="Nom du cours" />
+      <button id="saveCourse">Enregistrer le cours</button>
     </div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
